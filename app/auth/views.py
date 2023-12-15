@@ -16,15 +16,17 @@ def register():
     try:
         data = user_registration_schema.load(request.json)
     except ValidationError as err:
-        return jsonify(err.messages), 400
+        print("ERROR", err.messages)
+        return jsonify({"message": err.messages, "status_code": 400}), 400
     username = data.get("username")
     email = data.get("email")
     if Auth.user_exists(username):
-        return jsonify({"message": f"User: '{username}' already exists"}), 403
+        return jsonify({"message": f"User: '{username}' already exists",
+                        "status_code": 403}), 403
     if Auth.email_exists(email):
         return jsonify({"message": f"Email: '{email}' already exists"}), 403
     Auth.add_user(**data)
-    return jsonify({"message": "User registered successfully"}), 201
+    return jsonify({"message": "User registered successfully", "status_code": 201}), 201
 
 
 @auth_blueprint.route("/login", methods=["POST"])
