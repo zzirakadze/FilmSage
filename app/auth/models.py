@@ -1,3 +1,5 @@
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
@@ -43,16 +45,19 @@ class Auth:
         username: str,
         password: str,
     ) -> None:
-        password_hash = Auth.hash_password(password)
-        new_user = User(
-            name=name,
-            surname=surname,
-            email=email,
-            username=username,
-            password=password_hash,
-        )
-        db.session.add(new_user)
-        db.session.commit()
+        try:
+            password_hash = Auth.hash_password(password)
+            new_user = User(
+                name=name,
+                surname=surname,
+                email=email,
+                username=username,
+                password=password_hash,
+            )
+            db.session.add(new_user)
+            db.session.commit()
+        except Exception as e:
+            print("Error adding user to database: ", e)
 
     @staticmethod
     def check_user(username: str, password: str):
@@ -63,11 +68,19 @@ class Auth:
 
     @staticmethod
     def user_exists(username: str) -> bool:
-        return User.query.filter_by(username=username).first() is not None
+        try:
+            return User.query.filter_by(username=username).first() is not None
+        except Exception as e:
+            print(e)
+            return False
 
     @staticmethod
     def email_exists(email: str) -> bool:
-        return User.query.filter_by(email=email).first() is not None
+        try:
+            return User.query.filter_by(email=email).first() is not None
+        except Exception as e:
+            print(e)
+            return False
 
     @staticmethod
     def create_tokens(user_id):
@@ -76,6 +89,10 @@ class Auth:
         return access_token, refresh_token
 
     @staticmethod
-    def get_user(user_id: User.id) -> str:
-        user = User.query.get(user_id)
-        return f"{user.name} {user.surname}"
+    def get_user(user_id: User.id) -> str | None:
+        try:
+            user = User.query.get(user_id)
+            return f"{user.name} {user.surname}"
+        except Exception as e:
+            print(e)
+            return None
